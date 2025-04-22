@@ -18,9 +18,7 @@ const app = express();
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [/\.vercel\.app$/, /localhost/] 
-    : 'http://localhost:5173',
+  origin: true, // Allow any origin in production
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

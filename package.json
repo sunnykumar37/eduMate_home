@@ -1,0 +1,17 @@
+{
+  "name": "edumate",
+  "version": "1.0.0",
+  "description": "EduMate Quiz Generator",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "build": "cd client && npm install && npm run build",
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd client && npm run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+} 
