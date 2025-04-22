@@ -3,9 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const AuthContext = createContext();
 
 // Define the API base URL based on environment
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '/api' 
-  : 'http://localhost:5000/api';
+const API_BASE_URL = '/api';
 
 export const useAuth = () => {
   return useContext(AuthContext);
@@ -47,6 +45,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
+      console.log('Login request payload:', credentials);
+      
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
@@ -54,14 +54,18 @@ export const AuthProvider = ({ children }) => {
         },
         body: JSON.stringify(credentials)
       });
+      
+      console.log('Login response status:', response.status);
       const data = await response.json();
+      console.log('Login response data:', data);
+      
       if (data.success) {
         localStorage.setItem('token', data.token);
         setToken(data.token);
         setUser(data.user);
         return { success: true };
       } else {
-        return { success: false, error: data.error };
+        return { success: false, error: data.error || 'Login failed' };
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -71,21 +75,45 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
+      console.log('Register request payload:', userData);
+      
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(userData)
+        body: JSON.stringify(userData),
+        credentials: 'include'
       });
-      const data = await response.json();
-      if (data.success) {
-        localStorage.setItem('token', data.token);
-        setToken(data.token);
-        setUser(data.user);
-        return { success: true };
-      } else {
-        return { success: false, error: data.error };
+      
+      console.log('Register response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Register response error text:', errorText);
+        try {
+          const errorJson = JSON.parse(errorText);
+          return { success: false, error: errorJson.error || 'Registration failed' };
+        } catch (e) {
+          return { success: false, error: 'Registration failed with status: ' + response.status };
+        }
+      }
+      
+      try {
+        const data = await response.json();
+        console.log('Register response data:', data);
+        
+        if (data.success) {
+          localStorage.setItem('token', data.token);
+          setToken(data.token);
+          setUser(data.user);
+          return { success: true };
+        } else {
+          return { success: false, error: data.error || 'Registration failed' };
+        }
+      } catch (jsonError) {
+        console.error("JSON parsing error:", jsonError);
+        return { success: false, error: 'Error processing server response' };
       }
     } catch (error) {
       console.error("Register error:", error);
@@ -112,6 +140,7 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: data.error };
       }
     } catch (error) {
+      console.error("Google auth error:", error);
       return { success: false, error: 'Error connecting to server' };
     }
   };
@@ -135,6 +164,7 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: data.error };
       }
     } catch (error) {
+      console.error("Microsoft auth error:", error);
       return { success: false, error: 'Error connecting to server' };
     }
   };
@@ -157,6 +187,7 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: data.error };
       }
     } catch (error) {
+      console.error("Update profile error:", error);
       return { success: false, error: 'Error connecting to server' };
     }
   };

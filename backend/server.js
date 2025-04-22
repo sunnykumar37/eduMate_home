@@ -18,18 +18,32 @@ const app = express();
 
 // CORS configuration
 app.use(cors({
-  origin: true, // Allow any origin in production
+  origin: '*', // Allow all origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Test route
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Server is working!', success: true });
+});
+
+// Debug middleware to log requests
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+  if (req.method === 'POST' || req.method === 'PUT') {
+    console.log('Request body:', JSON.stringify(req.body));
+  }
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -40,21 +54,29 @@ app.post('/api/export/google-forms', exportToGoogleForms);
 app.post('/api/export/moodle', exportToMoodle);
 app.post('/api/upload-pdf', upload.single('pdf'), uploadPDF);
 
-// Test route
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Server is working!' });
-});
-
 // Error handling middleware
 app.use((err, req, res, next) => {
+  console.error('Error occurred:', err);
   console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!', error: err.message });
+  res.status(err.status || 500).json({ 
+    success: false,
+    message: err.message || 'Something went wrong!', 
+    error: process.env.NODE_ENV === 'production' ? 'Server error' : err.message 
+  });
 });
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  });
+
+// For Vercel deployment - handle 404s by sending the client app
+app.get('*', (req, res) => {
+  res.status(200).json({ message: 'Please use /api routes for server requests' });
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

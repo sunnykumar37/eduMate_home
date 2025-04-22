@@ -44,11 +44,12 @@ const generateGeminiResponse = async (prompt) => {
 // Register new user
 const register = async (req, res) => {
   try {
-    console.log('Register request body:', req.body);
+    console.log('Register request received:', req.body);
     const { username, email, password } = req.body;
 
     // Validate input
     if (!username || !email || !password) {
+      console.log('Missing required fields:', { username: !!username, email: !!email, password: !!password });
       return res.status(400).json({
         success: false,
         error: 'All fields (username, email, password) are required'
@@ -58,6 +59,7 @@ const register = async (req, res) => {
     // Check if username exists
     const existingUsername = await User.findOne({ username });
     if (existingUsername) {
+      console.log('Username already exists:', username);
       return res.status(400).json({
         success: false,
         error: 'Username is already taken'
@@ -67,40 +69,45 @@ const register = async (req, res) => {
     // Check if email exists
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
+      console.log('Email already exists:', email);
       return res.status(400).json({
         success: false,
         error: 'Email is already registered. Please login'
       });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new user
+    console.log('Creating new user with:', { username, email });
+    
+    // Create new user - DON'T hash password here, the model middleware will do it
     const newUser = new User({
       username,
       email,
-      password: hashedPassword
+      password
     });
 
-    await newUser.save();
+    const savedUser = await newUser.save();
+    console.log('User saved successfully:', savedUser._id);
 
     // Generate token
-    const token = generateToken(newUser);
+    const token = generateToken(savedUser);
 
-    res.status(201).json({
+    // Remove password from response
+    const userResponse = {
+      id: savedUser._id,
+      username: savedUser.username,
+      email: savedUser.email
+    };
+
+    console.log('Sending successful registration response');
+    return res.status(201).json({
       success: true,
       token,
-      user: {
-        id: newUser._id,
-        username: newUser.username,
-        email: newUser.email
-      }
+      user: userResponse
     });
 
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error during registration. Please try again.'
     });
