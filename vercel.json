@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist",
+        "buildCommand": "cd client && npm install && npm run build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "backend/server.js"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/dist/assets/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/dist/index.html"
+    }
+  ],
+  "env": {
+    "MONGODB_URI": "mongodb+srv://sunny:sunny@cluster0.x67vd0a.mongodb.net/Edumate?retryWrites=true&w=majority&appName=Cluster0",
+    "JWT_SECRET": "your_jwt_secret_here",
+    "GOOGLE_AI_API_KEY": "AIzaSyBfdPXxvX6EPEBdynqJZONafpoHW8RcJoQ",
+    "GOOGLE_CLIENT_ID": "your_google_client_id",
+    "GOOGLE_CLIENT_SECRET": "your_google_client_secret",
+    "MICROSOFT_CLIENT_ID": "your_microsoft_client_id",
+    "MICROSOFT_CLIENT_SECRET": "your_microsoft_client_secret"
+  }
+} 
