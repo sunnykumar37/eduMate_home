@@ -44,6 +44,7 @@ const generateGeminiResponse = async (prompt) => {
 // Register new user
 const register = async (req, res) => {
   try {
+    console.log('Register request body:', req.body);
     const { username, email, password } = req.body;
 
     // Validate input
@@ -90,7 +91,11 @@ const register = async (req, res) => {
     res.status(201).json({
       success: true,
       token,
-      user: newUser.getPublicProfile()
+      user: {
+        id: newUser._id,
+        username: newUser.username,
+        email: newUser.email
+      }
     });
 
   } catch (error) {
