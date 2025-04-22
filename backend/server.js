@@ -28,24 +28,24 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Static files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Test route
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Server is working!', success: true });
+// Check if server is up
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'Server is healthy' });
 });
 
 // Debug middleware to log requests
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
   if (req.method === 'POST' || req.method === 'PUT') {
-    console.log('Request body:', JSON.stringify(req.body));
+    console.log('Request body:', JSON.stringify(req.body).substring(0, 200) + '...');
   }
   next();
 });
 
-// Routes
+// Static files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', notesRoutes);
 app.post('/api/generate-quiz', generateQuiz);
@@ -53,6 +53,11 @@ app.post('/api/export/pdf', exportToPDF);
 app.post('/api/export/google-forms', exportToGoogleForms);
 app.post('/api/export/moodle', exportToMoodle);
 app.post('/api/upload-pdf', upload.single('pdf'), uploadPDF);
+
+// Test route
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Server is working!', success: true });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -73,11 +78,7 @@ mongoose.connect(process.env.MONGODB_URI)
     process.exit(1);
   });
 
-// For Vercel deployment - handle 404s by sending the client app
-app.get('*', (req, res) => {
-  res.status(200).json({ message: 'Please use /api routes for server requests' });
-});
-
+// Set up server port
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
